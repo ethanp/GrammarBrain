@@ -1,0 +1,6 @@
+title,part,min len,max len,incl num,incl punct,num pos,medium,hidden list,hidden type,output type,training iters,train set size,test set size,train mins
+default dict title,default part,3,4,True,True,12,False,[50],LSTM,Tanh,2,986,194,0.184682366667
+Epoch,Train Error,Test Error,Validation Error
+1,0.353955375254,0.376288659794,0.375
+2,0.333671399594,0.360824742268,0.358695652174
+Final Validation Error,0.358695652174
