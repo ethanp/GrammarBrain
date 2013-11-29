@@ -43,12 +43,13 @@ class BrownGrammarTrainer(object):
     #noinspection PyTypeChecker
     def __init__(self, title='default title', part='default', minim=4, maxim=5, outdim=2, hiddendim=None,
                  train_time=50, medium=True, hidden_type=LSTMLayer,
-                 output_type=TanhLayer, include_numbers=True, include_punctuation=True):
+                 output_type=TanhLayer, include_numbers=True, include_punctuation=True, gen_len=None):
         if not hiddendim: hiddendim = [5]
         self.TITLE       = title
         self.PART        = part
         self.MIN_LEN     = minim
         self.MAX_LEN     = maxim
+        self.GEN_LEN     = gen_len if gen_len else None
         self.MEDIUM      = medium
         self.NUM_POS     = len(medium_pos_map) if medium else len(pos_vector_mapping)
         self.HIDDEN_LIST = hiddendim
@@ -61,6 +62,7 @@ class BrownGrammarTrainer(object):
         self.training_iterations = train_time
         print str(self)
         self.train_set, self.test_set, self.val_set = self.create_TrnTstVal_sets()
+        # for experiment about generalization effectiveness
         self.train_list = []
         self.train_mins = 0.
         csv_dir = EXPERIMENT_RESULT_PATH + self.TITLE
@@ -165,14 +167,12 @@ class BrownGrammarTrainer(object):
         return train_data, test_data, validation_data
 
 
-    def generalization_experiment(self):
+    def generalization_error(self):
         '''
-        test the trained network on sentences one word longer
-        than the maximum length the sentences were trained on
+        create dataset of sentences one word longer than
+        the maximum length the sentences were trained on
         '''
-        exper_len = self.MAX_LEN + 1
-
-        sentence_tuples = get_nice_sentences_as_tuples(MIN=exper_len, MAX=exper_len,
+        sentence_tuples = get_nice_sentences_as_tuples(MIN=self.GEN_LEN, MAX=self.GEN_LEN,
                                                        include_numbers=self.INCL_NUM,
                                                        include_punctuation=self.INCL_PUNCT)
 
@@ -182,6 +182,8 @@ class BrownGrammarTrainer(object):
         for s in sentence_matrices:
             self.insert_grammatical_sequence(exper_data, s)
             self.insert_randomized_sequence(exper_data, s)
+
+        return 1 - testOnSequenceData(self.network, exper_data)
 
 
     def build_network(self):
@@ -198,7 +200,7 @@ class BrownGrammarTrainer(object):
         # NOTE: you DO have to add a hidden->hidden connection even when you set rec=True
         #   bc otw how would it know that you wanted that /particular/ connection!?
         h = network['hidden0']
-        o = network['out']
+        #o = network['out']
         network.addRecurrentConnection(FullConnection(h, h))  # made automatically below?
         #network.addRecurrentConnection(FullConnection(o, h))
         network.sortModules()
@@ -207,22 +209,22 @@ class BrownGrammarTrainer(object):
 
     # http://pybrain.org/docs/api/supervised/trainers.html
     # backprop's "through time" on a sequential dataset
-    def train(self, network_module, training_data, testing_data, validation_data, n=20, s=5):
-        trainer = BackpropTrainer(module=network_module, dataset=training_data, verbose=True)
+    def train(self, n=20, s=5):
+        trainer = BackpropTrainer(module=self.network, dataset=self.train_set, verbose=True)
         for i in range(n/s):
             trainer.trainEpochs(epochs=s)
             print 'epoch', (i+1)*s, 'finished'
 
             # modified from testOnClassData source code
-            training_data.reset()
+            self.train_set.reset()
 
-            training_error = 1 - testOnSequenceData(network_module, training_data)
+            training_error = 1 - testOnSequenceData(self.network, self.train_set)
             print '\nTRAINING error: {:.3f}'.format(training_error)
 
-            test_error = 1 - testOnSequenceData(network_module, testing_data)
+            test_error = 1 - testOnSequenceData(self.network, self.test_set)
             print 'TEST error: {:.3f}\n'.format(test_error)
 
-            val_error = 1 - testOnSequenceData(network_module, validation_data)
+            val_error = 1 - testOnSequenceData(self.network, self.val_set)
             print 'VALIDATION error: {:.3f}\n'.format(val_error)
 
             self.train_list.append(((i+1)*s, training_error, test_error, val_error))
@@ -231,12 +233,7 @@ class BrownGrammarTrainer(object):
     def timed_train(self, s=1):
         start = time.clock()
 
-        self.train(network_module=self.network,
-                   training_data=self.train_set,
-                   testing_data=self.test_set,
-                   validation_data=self.val_set,
-                   n=self.training_iterations,
-                   s=s)
+        self.train(n=self.training_iterations, s=s)
 
         train_minutes = (time.clock() - start) / 60
         print 'Total Train Time: %.2f minutes' % train_minutes
@@ -262,6 +259,9 @@ class BrownGrammarTrainer(object):
             ('train mins'       , self.train_mins)
         ]
 
+        if self.GEN_LEN:
+            repr_list.append(('gen len', self.GEN_LEN))
+
         with open(self.csv_filename, 'wb') as csv_file:
             writer = csv.writer(csv_file)
 
@@ -275,6 +275,9 @@ class BrownGrammarTrainer(object):
 
             trn, val = min((trn, val) for (ep, trn, tst, val) in self.train_list)
             writer.writerow(['Final Validation Error', val])
+
+            if self.GEN_LEN:
+                writer.writerow(['Generalization Error', self.generalization_error()])
 
         with open(self.pickle_name, 'wb') as pickle_loc:
             pickle.dump(self.network, pickle_loc)
