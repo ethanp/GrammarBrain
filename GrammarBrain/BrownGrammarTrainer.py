@@ -13,12 +13,11 @@ from pybrain.structure import TanhLayer, LSTMLayer
 from brown_data.util.my_seq_tester import testOnSequenceData
 from brown_data.util.brown_pos_map import pos_vector_mapping, medium_pos_map
 from brown_data.experiment_scripts import EXPERIMENT_RESULT_PATH
-from brown_data.util.get_brown_pos_sents import get_nice_sentences_as_tuples, print_n_sentences, construct_sentence_matrix
+from brown_data.util.get_brown_pos_sents import get_nice_sentences_as_tuples, print_n_sentences, construct_sentence_matrix, construct_sentence_matrices
 
 GRAMMATICAL = (0, 1)
 UNGRAMMATICAL = (1, 0)
 MID_SENTENCE = (0.5, 0.5)
-
 
 
 '''
@@ -94,35 +93,34 @@ class BrownGrammarTrainer(object):
         string += ['\n-------------------------------------------------------\n']
         return '\n'.join(string)
 
+    def insert_grammatical_sequence(self, dataset, sentence_mat):
+        dataset.newSequence()
+        for i, word_vector in enumerate(sentence_mat):
+            if i < len(sentence_mat) - 1:
+                dataset.appendLinked(word_vector, MID_SENTENCE)
+            else:
+                dataset.appendLinked(word_vector, GRAMMATICAL)
+
+    # there are a few options on what to do here it /would/ make sense to
+    # give the first n-1 of these a `blank_label` like the grammatical
+    # ones, but by /not/ doing that, we are assuming that we have no
+    # problem declaring that partial sentences building up to ungrammatical
+    # sentences should be already recognized as ungrammatical a happy
+    # medium might be to label them as "probably" ungrammatical
+    def insert_randomized_sequence(self, dataset, sentence_mat):
+        dataset.newSequence()
+        dup_sent_mat = sentence_mat[:]
+        shuffle(dup_sent_mat)
+        for word_vector in dup_sent_mat:
+            dataset.appendLinked(word_vector, UNGRAMMATICAL)
+
+    def print_data_data(self, data, name):
+        print "num", name, "patterns: ", data.getNumSequences()
+        print "input and output dimensions: ", data.indim, data.outdim
+        print "First sample (input, target, class):"
+        print data['input'][0], data['target'][0]
 
     def create_TrnTstVal_sets(self):
-
-        def insert_grammatical_sequence(dataset, sentence_mat):
-            dataset.newSequence()
-            for i, word_vector in enumerate(sentence_mat):
-                if i < len(sentence_mat) - 1:
-                    dataset.appendLinked(word_vector, MID_SENTENCE)
-                else:
-                    dataset.appendLinked(word_vector, GRAMMATICAL)
-
-        # there are a few options on what to do here it /would/ make sense to
-        # give the first n-1 of these a `blank_label` like the grammatical
-        # ones, but by /not/ doing that, we are assuming that we have no
-        # problem declaring that partial sentences building up to ungrammatical
-        # sentences should be already recognized as ungrammatical a happy
-        # medium might be to label them as "probably" ungrammatical
-        def insert_randomized_sequence(dataset, sentence_mat):
-            dataset.newSequence()
-            dup_sent_mat = sentence_mat[:]
-            shuffle(dup_sent_mat)
-            for word_vector in dup_sent_mat:
-                dataset.appendLinked(word_vector, UNGRAMMATICAL)
-
-        def print_data_data(data, name):
-            print "num", name, "patterns: ", data.getNumSequences()
-            print "input and output dimensions: ", data.indim, data.outdim
-            print "First sample (input, target, class):"
-            print data['input'][0], data['target'][0]
 
         # inp: dimensionality of the input (# of POS types)
         # target: output dimensionality (# of possible classifications)
@@ -150,21 +148,40 @@ class BrownGrammarTrainer(object):
             sentence_matrix = construct_sentence_matrix(s, medium=self.MEDIUM)
             r = random()
             if r < .15:  # percent distribution between sets needn't be perfect, right?
-                insert_grammatical_sequence(validation_data, sentence_matrix)
-                insert_randomized_sequence(validation_data, sentence_matrix)
+                self.insert_grammatical_sequence(validation_data, sentence_matrix)
+                self.insert_randomized_sequence(validation_data, sentence_matrix)
             elif r < .30:
-                insert_grammatical_sequence(test_data, sentence_matrix)
-                insert_randomized_sequence(test_data, sentence_matrix)
+                self.insert_grammatical_sequence(test_data, sentence_matrix)
+                self.insert_randomized_sequence(test_data, sentence_matrix)
             else:
-                insert_grammatical_sequence(train_data, sentence_matrix)
-                insert_randomized_sequence(train_data, sentence_matrix)
+                self.insert_grammatical_sequence(train_data, sentence_matrix)
+                self.insert_randomized_sequence(train_data, sentence_matrix)
 
         ''' FOR DEBUGGING DATASET '''
-        print_data_data(train_data, 'training')
-        print_data_data(test_data, 'testing')
-        print_data_data(validation_data, 'validation')
+        self.print_data_data(train_data, 'training')
+        self.print_data_data(test_data, 'testing')
+        self.print_data_data(validation_data, 'validation')
 
         return train_data, test_data, validation_data
+
+
+    def generalization_experiment(self):
+        '''
+        test the trained network on sentences one word longer
+        than the maximum length the sentences were trained on
+        '''
+        exper_len = self.MAX_LEN + 1
+
+        sentence_tuples = get_nice_sentences_as_tuples(MIN=exper_len, MAX=exper_len,
+                                                       include_numbers=self.INCL_NUM,
+                                                       include_punctuation=self.INCL_PUNCT)
+
+        exper_data = SequenceClassificationDataSet(inp=self.NUM_POS, target=self.NUM_OUTPUTS)
+
+        sentence_matrices = construct_sentence_matrices(sentence_tuples, medium=self.MEDIUM)
+        for s in sentence_matrices:
+            self.insert_grammatical_sequence(exper_data, s)
+            self.insert_randomized_sequence(exper_data, s)
 
 
     def build_network(self):
