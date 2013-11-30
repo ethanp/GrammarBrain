@@ -280,8 +280,9 @@ class BrownGrammarTrainer(object):
             if self.GEN_LEN:
                 for gen_len in range(self.MIN_LEN+1, self.GEN_LEN+1):
                     gen_error = self.generalization_error(gen_len)
-                    writer.writerow(['Generalization Error', gen_len, gen_error])
-                    print gen_error
+                    error_at_len = ['Generalization Error', gen_len, gen_error]
+                    writer.writerow(error_at_len)
+                    print error_at_len
 
         with open(self.pickle_name, 'wb') as pickle_loc:
             pickle.dump(self.network, pickle_loc)
