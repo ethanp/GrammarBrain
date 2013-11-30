@@ -168,12 +168,8 @@ class BrownGrammarTrainer(object):
         return train_data, test_data, validation_data
 
 
-    def generalization_error(self, len):
-        '''
-        create dataset of sentences one word longer than
-        the maximum length the sentences were trained on
-        '''
-        sentence_tuples = get_nice_sentences_as_tuples(MIN=len, MAX=len,
+    def generalization_error(self, length):
+        sentence_tuples = get_nice_sentences_as_tuples(MIN=length, MAX=length,
                                                        include_numbers=self.INCL_NUM,
                                                        include_punctuation=self.INCL_PUNCT)
 
@@ -269,11 +265,11 @@ class BrownGrammarTrainer(object):
             writer.writerows(self.train_list)
 
             # print validation error of training iteration of lowest test error
-            tst, val = min((tst, val) for (ep, trn, tst, val) in self.train_list)
+            tst, val = min((tst, val) for (ep, trn, tst, val) in self.train_list[1:])
             writer.writerow(['Final Validation Error', val])
 
             if self.GEN_LEN:
-                for gen_len in range(self.MIN_LEN+1, self.GEN_LEN+1):
+                for gen_len in range(self.MIN_LEN, self.GEN_LEN+1):
                     gen_error = self.generalization_error(gen_len)
                     error_at_len = ['Generalization Error', gen_len, gen_error]
                     writer.writerow(error_at_len)
