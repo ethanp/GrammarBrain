@@ -79,6 +79,8 @@ def construct_sentence_matrix(s, medium):
     if medium:
         vector_len = len(bpm.medium_pos_map)
         def vector_id(the_pos):
+            if '+' in the_pos:
+                the_pos = the_pos.split('+')[0]  # workaround for bug in NLTK's `simplify_brown_tag()`
             return bpm.medium_pos_map[simplify(the_pos)]
     else:
         vector_len = len(bpm.pos_vector_mapping)

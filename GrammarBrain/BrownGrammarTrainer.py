@@ -19,7 +19,6 @@ GRAMMATICAL = (0, 1)
 UNGRAMMATICAL = (1, 0)
 MID_SENTENCE = (0.5, 0.5)
 
-
 '''
     How Experiment Printing Works:
     ==============================

@@ -34,6 +34,16 @@ def gen_error_3():
     gt.timed_train(s=4)
     gt.make_csv_and_pickle()
 
+def gen_error_4():
+    gen_dict_4 = gen_dict.copy()
+    gen_dict_4['part'] = 4
+    gen_dict_4['medium'] = True
+    gen_dict_4['include_punctuation'] = True
+    gen_dict_4['include_numbers'] = True
+    gen_dict_4['gen_len'] = 30
+    gt = BrownGrammarTrainer(**gen_dict_4)
+    gt.timed_train(s=4)
+    gt.make_csv_and_pickle()
 
 if __name__ == '__main__':
-    gen_error_3()
+    gen_error_4()
