@@ -20,7 +20,7 @@ def get_brown_tagged_sentence_tuples(MIN=3, MAX=4):
     strip off the final period to simplify the overall learning task
     the sentence sizes are INCLUSIVE
     '''
-    return [s[:-1] for s in brown.tagged_sents() if MIN < len(s) <= MAX and s[-1][0] == '.']
+    return [s[:-1] for s in brown.tagged_sents() if MIN <= len(s) <= MAX and s[-1][0] == '.']
 
 def get_nice_sentences_as_tuples(MIN=3, MAX=4, include_numbers=False, include_punctuation=False):
     ''' sentence sizes are INCLUSIVE '''

@@ -62,7 +62,6 @@ class BrownGrammarTrainer(object):
         self.training_iterations = train_time
         print str(self)
         self.train_set, self.test_set, self.val_set = self.create_TrnTstVal_sets()
-        # for experiment about generalization effectiveness
         self.train_list = []
         self.train_mins = 0.
         csv_dir = EXPERIMENT_RESULT_PATH + self.TITLE
@@ -116,13 +115,15 @@ class BrownGrammarTrainer(object):
         for word_vector in dup_sent_mat:
             dataset.appendLinked(word_vector, UNGRAMMATICAL)
 
-    def print_data_data(self, data, name):
-        print "num", name, "patterns: ", data.getNumSequences()
-        print "input and output dimensions: ", data.indim, data.outdim
-        print "First sample (input, target, class):"
-        print data['input'][0], data['target'][0]
 
     def create_TrnTstVal_sets(self):
+
+        def print_data_data(data, name):
+            print "num", name, "patterns: ", data.getNumSequences()
+            print "input and output dimensions: ", data.indim, data.outdim
+            print "First sample:"
+            print 'input', data['input'][0]
+            print 'target', data['target'][0]
 
         # inp: dimensionality of the input (# of POS types)
         # target: output dimensionality (# of possible classifications)
@@ -160,19 +161,19 @@ class BrownGrammarTrainer(object):
                 self.insert_randomized_sequence(train_data, sentence_matrix)
 
         ''' FOR DEBUGGING DATASET '''
-        self.print_data_data(train_data, 'training')
-        self.print_data_data(test_data, 'testing')
-        self.print_data_data(validation_data, 'validation')
+        print_data_data(train_data, 'training')
+        print_data_data(test_data, 'testing')
+        print_data_data(validation_data, 'validation')
 
         return train_data, test_data, validation_data
 
 
-    def generalization_error(self):
+    def generalization_error(self, len):
         '''
         create dataset of sentences one word longer than
         the maximum length the sentences were trained on
         '''
-        sentence_tuples = get_nice_sentences_as_tuples(MIN=self.GEN_LEN, MAX=self.GEN_LEN,
+        sentence_tuples = get_nice_sentences_as_tuples(MIN=len, MAX=len,
                                                        include_numbers=self.INCL_NUM,
                                                        include_punctuation=self.INCL_PUNCT)
 
@@ -277,7 +278,10 @@ class BrownGrammarTrainer(object):
             writer.writerow(['Final Validation Error', val])
 
             if self.GEN_LEN:
-                writer.writerow(['Generalization Error', self.generalization_error()])
+                for gen_len in range(self.MIN_LEN+1, self.GEN_LEN+1):
+                    gen_error = self.generalization_error(gen_len)
+                    writer.writerow(['Generalization Error', gen_len, gen_error])
+                    print gen_error
 
         with open(self.pickle_name, 'wb') as pickle_loc:
             pickle.dump(self.network, pickle_loc)
