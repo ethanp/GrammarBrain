@@ -14,7 +14,7 @@ def gen_error_1():
     gen_dict_1 = gen_dict.copy()
     gen_dict_1['part'] = 1
     gt = BrownGrammarTrainer(**gen_dict_1)
-    gt.timed_train()
+    gt.timed_train(s=4)
     gt.make_csv_and_pickle()
 
 def gen_error_2():
@@ -23,7 +23,7 @@ def gen_error_2():
     gen_dict_2['include_punctuation'] = True
     gen_dict_2['include_numbers'] = True
     gt = BrownGrammarTrainer(**gen_dict_2)
-    gt.timed_train()
+    gt.timed_train(s=4)
     gt.make_csv_and_pickle()
 
 def gen_error_3():
@@ -31,9 +31,9 @@ def gen_error_3():
     gen_dict_3['part'] = 3
     gen_dict_3['medium'] = True
     gt = BrownGrammarTrainer(**gen_dict_3)
-    gt.timed_train()
+    gt.timed_train(s=4)
     gt.make_csv_and_pickle()
 
 
 if __name__ == '__main__':
-    gen_error_1()
+    gen_error_3()

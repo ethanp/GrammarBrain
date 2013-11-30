@@ -62,7 +62,7 @@ class BrownGrammarTrainer(object):
         self.training_iterations = train_time
         print str(self)
         self.train_set, self.test_set, self.val_set = self.create_TrnTstVal_sets()
-        self.train_list = []
+        self.train_list = [('Epoch', 'Train Error', 'Test Error', 'Validation Error')]
         self.train_mins = 0.
         csv_dir = EXPERIMENT_RESULT_PATH + self.TITLE
         if not os.path.exists(csv_dir):
@@ -265,16 +265,11 @@ class BrownGrammarTrainer(object):
 
         with open(self.csv_filename, 'wb') as csv_file:
             writer = csv.writer(csv_file)
+            writer.writerows(repr_list)
+            writer.writerows(self.train_list)
 
-            writer.writerow([k for k, v in repr_list])
-            writer.writerow([v for k, v in repr_list])
-
-            writer.writerow(['Epoch', 'Train Error', 'Test Error', 'Validation Error'])
-
-            for (epoch, train, test, val) in self.train_list:
-                writer.writerow((epoch, train, test, val))
-
-            trn, val = min((trn, val) for (ep, trn, tst, val) in self.train_list)
+            # print validation error of training iteration of lowest test error
+            tst, val = min((tst, val) for (ep, trn, tst, val) in self.train_list)
             writer.writerow(['Final Validation Error', val])
 
             if self.GEN_LEN:
