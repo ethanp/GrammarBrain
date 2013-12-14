@@ -20,10 +20,9 @@ def test_experiment_setup():
     test_dict = default_dict.copy()
     test_dict['hiddendim'] = [3]
     test_dict['maxim'] = 3
-    gt = BrownGrammarTrainer(**default_dict)
+    gt = BrownGrammarTrainer(**test_dict)
     gt.timed_train()
     gt.make_csv_and_pickle()
-
 
 
 if __name__ == '__main__':

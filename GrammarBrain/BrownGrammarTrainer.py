@@ -28,7 +28,7 @@ MID_SENTENCE = (0.5, 0.5)
  2. as the thing is training, be concatenating some list with
     the error-numbers over the training, (validation?,) and test sets
 
- 3. print the param_dict as `comma_separated(keys())\ncomma_separated(values())`
+ 3. print the param_dict as `comma_separated(keys)\ncomma_separated(values)`
 
  4. print the training as
 
@@ -267,6 +267,8 @@ class BrownGrammarTrainer(object):
             tst, val = min((tst, val) for (ep, trn, tst, val) in self.train_list[1:])
             writer.writerow(['Final Validation Error', val])
 
+            # if desired, add generalization errors to output.csv
+            # include num & punct if they were used in training
             if self.GEN_LEN:
                 for gen_len in range(self.MIN_LEN, self.GEN_LEN+1):
                     gen_error = self.generalization_error(gen_len)

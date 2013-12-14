@@ -1,6 +1,9 @@
 import os
 import cPickle as pickle
 
+# should say something like
+# TOPDIR = os.path.dirname(os.path.abspath(__file__))
+# and then move relative to that
 PICKLES = '/Users/Ethan/Dropbox/CSyStuff/ProgrammingGit/StuffIWrote/Python/GrammarBrain/GrammarBrain/brown_data/brown_pickles/'
 
 
