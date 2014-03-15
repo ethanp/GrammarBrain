@@ -7,8 +7,6 @@ from pybrain.supervised.trainers import BackpropTrainer
 from pybrain.tools.shortcuts import buildNetwork
 from pybrain.structure.connections import FullConnection
 from pybrain.structure import TanhLayer, LSTMLayer
-# checkout the SharedFullConnection, LSTMLayer, BidirectionalNetwork, etc.
-# see if RPROP works faster
 
 from brown_data.util.my_seq_tester import testOnSequenceData
 from brown_data.util.brown_pos_map import pos_vector_mapping, medium_pos_map
@@ -211,7 +209,7 @@ class BrownGrammarTrainer(object):
             trainer.trainEpochs(epochs=s)
             print 'epoch', (i+1)*s, 'finished'
 
-            # modified from testOnClassData source code
+            # modified from testOnClassData() source code
             self.train_set.reset()
 
             training_error = 1 - testOnSequenceData(self.network, self.train_set)
@@ -281,5 +279,5 @@ class BrownGrammarTrainer(object):
 
 
 if __name__ == "__main__":
-    gt = BrownGrammarTrainer(hiddendim=50) # lots of params are supposed to go in here
+    gt = BrownGrammarTrainer(hiddendim=50) # lots of params can be passed in here
     gt.timed_train()
