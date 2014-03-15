@@ -1,4 +1,4 @@
-#/bin/sh
+#!/bin/sh
 # Pickle remover
 
 find . -name '*.p' | while read line; do
